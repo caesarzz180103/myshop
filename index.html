@@ -28,19 +28,43 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             position: relative;
         }
-        /* language selector: use fixed so it stays at top-right of viewport */
-        .lang-select {
-            position: fixed;
+        /* 翻译控件位置（放在右上角）*/
+        #google_translate_element {
+            position: absolute;
             right: 18px;
             top: 18px;
+            z-index: 120;
             background: rgba(255,255,255,0.95);
             border-radius: 6px;
             padding: 6px;
-            font-size: 14px;
-            border: 1px solid #e0e0e0;
-            z-index: 9999;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         }
 
+        /* ========== 修复 Google Translate 在移动端下拉不可点的问题 ==========
+           - 强制把 google 下拉与 menu-frame 提升到最上层
+           - 给 select 元素更高的 z-index 并确保 pointer-events/pointer 可用
+           - 如果页面某处使用 transform，会导致子元素（如下拉）不可点击；尽量避免:
+        */
+        /* 翻译插件本身的 select（下拉） */
+        .goog-te-combo {
+            z-index: 99999 !important;
+            position: relative !important;
+            pointer-events: auto !important;
+            -webkit-appearance: menulist-button !important;
+        }
+        /* Google 插件插入的 iframe（菜单） */
+        .goog-te-menu-frame {
+            z-index: 99998 !important;
+            position: absolute !important;
+            /* 调整位置以避免被 header/其它元素遮挡（按需调整 top/right） */
+            top: 56px !important;
+            right: 18px !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2) !important;
+        }
+        /* 如果你页面里某些元素使用 transform，会导致子元素（如下拉）不可点击；尽量避免：
+           例如：.some-parent { transform: translateZ(0); } -> 移除或改用其它方式
+        */
+        /* 其它现有样式（略） */
         .header h1 { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: 1px; }
         .header p { font-size: 16px; margin-top: 8px; opacity: 0.95; font-style: italic; }
 
@@ -51,7 +75,7 @@
         .product-info { padding: 15px 10px; }
         .product-info h3 { margin: 5px 0; font-size: 17px; color: #555; }
         .price { color: #ff9800; font-weight: bold; font-size: 22px; margin-bottom: 15px; }
-        .buy-button { background-color: #4db6ac; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: 500; width: 90%; margin-bottom: 15px; transition: background-color 0.2s; }
+        .buy-button { background-color: #4db6ac; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: 500; width: 90%; margin-bottom: 15px; }
         .buy-button:active { background-color: #26a69a; }
 
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
@@ -59,20 +83,16 @@
         .modal-content img { width: 100%; height: auto; border: 4px solid #81c784; border-radius: 6px; margin-bottom: 15px; }
         .close-button { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; }
         .close-button:hover { color: #ff9800; }
-
-        .translating { opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <select id="lang" class="lang-select" aria-label="选择语言 / Chọn ngôn ngữ">
-            <option value="zh">中文</option>
-            <option value="vi">Tiếng Việt</option>
-        </select>
+        <!-- Google 翻译小部件（用户可以选越南语或其他语言） -->
+        <div id="google_translate_element" aria-hidden="false"></div>
 
-        <h1>Quán ăn ngon Ngọc Lâm（玉林美食小店）</h1>
-        <p>Ẩm thực truyền thống Việt Nam làm thủ công（手工制作越南传统美食）</p>
+        <h1>玉林美食小店</h1>
+        <p>手工制作越南传统美食</p>
     </div>
 
     <div class="product-list">
@@ -114,156 +134,31 @@
     </div>
 
     <script>
-        // Multiple LibreTranslate endpoints to try as fallback
-        const TRANSLATE_ENDPOINTS = [
-            'https://libretranslate.de/translate',
-            'https://translate.argosopentech.org/translate',
-            'https://libretranslate.com/translate'
-        ];
-        const SUPPORTED_TARGETS = { vi: 'vi', zh: 'zh' };
+        // Google 翻译小部件初始化（来源语言设为中文）
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'zh-CN',
+                includedLanguages: 'vi,zh-CN,en', // 可选：放开需要支持的语言列表
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
 
-        const DELIMITER = '\n--xllx--\n'; // unlikely to appear in normal text
-
-        // Collect translatable elements and original texts
-        const translatable = { elements: [], attrs: [] };
-
-        function isVisible(el) {
-            return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-        }
-
-        function initTranslatables() {
-            translatable.elements = [];
-            translatable.attrs = [];
-            const selectors = 'h1,h2,h3,h4,h5,p,button,a,li,span,label,div';
-            document.querySelectorAll(selectors).forEach(el => {
-                if (!isVisible(el)) return;
-                if (el.closest('script,style')) return;
-                const text = (el.innerText || '').trim();
-                if (text) {
-                    if (!el.dataset.origText) el.dataset.origText = text;
-                    translatable.elements.push({ el: el, orig: el.dataset.origText });
-                }
-            });
-
-            document.querySelectorAll('img,button,input,textarea,select').forEach(el => {
-                ['alt','title','placeholder','value'].forEach(attr => {
-                    if (el.hasAttribute && el.hasAttribute(attr)) {
-                        const val = (el.getAttribute(attr) || '').trim();
-                        if (val) {
-                            const key = 'orig_' + attr;
-                            if (!el.dataset[key]) el.dataset[key] = val;
-                            translatable.attrs.push({ el: el, attr: attr, orig: el.dataset[key] });
-                        }
-                    }
-                });
-            });
-
-            if (!document.documentElement.dataset.origTitle) document.documentElement.dataset.origTitle = document.title;
-        }
-
-        async function tryTranslate(payload) {
-            // Try endpoints sequentially until one works
-            for (let url of TRANSLATE_ENDPOINTS) {
-                try {
-                    const res = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!res.ok) throw new Error(url + ' returned ' + res.status);
-                    const data = await res.json();
-                    // data may be {translatedText: '...'}
-                    if (typeof data === 'object' && data.translatedText) return data.translatedText;
-                    if (typeof data === 'string') return data;
-                    // some instances return {result: '...'} or array; try common fields
-                    if (data.result) return data.result;
-                    if (Array.isArray(data) && data.length && data[0].translatedText) return data[0].translatedText;
-                    return JSON.stringify(data);
-                } catch (err) {
-                    console.warn('Endpoint failed:', url, err);
-                    // try next
-                }
+            // 修复：防止翻译容器的触摸事件被上层捕获（某些页面上会被 window.onclick 或者其它拦截）
+            var gEl = document.getElementById('google_translate_element');
+            if (gEl && gEl.addEventListener) {
+                gEl.addEventListener('touchstart', function(e){
+                    e.stopPropagation();
+                }, {passive:false});
             }
-            throw new Error('All translate endpoints failed');
         }
 
-        async function translateBulk(texts, target) {
-            // join texts with delimiter and translate as a single request
-            const joined = texts.join(DELIMITER);
-            const payload = { q: joined, source: 'zh', target: target, format: 'text' };
-            const translatedJoined = await tryTranslate(payload);
-            // split back
-            const parts = translatedJoined.split(DELIMITER);
-            // if length mismatch, just return array with repeated joined text
-            if (parts.length !== texts.length) return parts;
-            return parts;
-        }
-
-        async function translateAll(target) {
-            const sel = document.getElementById('lang');
-            sel.classList.add('translating');
-
-            if (target === 'zh') {
-                translatable.elements.forEach(item => { item.el.innerText = item.orig; });
-                translatable.attrs.forEach(item => { item.el.setAttribute(item.attr, item.orig); });
-                document.title = document.documentElement.dataset.origTitle || document.title;
-                sel.classList.remove('translating');
-                return;
-            }
-
-            // build texts list
-            const texts = [];
-            const map = [];
-            translatable.elements.forEach(item => { texts.push(item.orig); map.push({type: 'text', el: item.el}); });
-            translatable.attrs.forEach(item => { texts.push(item.orig); map.push({type: 'attr', el: item.el, attr: item.attr}); });
-            texts.push(document.documentElement.dataset.origTitle || document.title); map.push({type: 'title'});
-
-            try {
-                const translatedParts = await translateBulk(texts, target);
-                // apply
-                for (let i = 0; i < translatedParts.length; i++) {
-                    const entry = map[i];
-                    const translated = translatedParts[i] || translatedParts[i] === '' ? translatedParts[i] : translatedParts[0] || '';
-                    if (!entry) continue;
-                    if (entry.type === 'text') entry.el.innerText = translated;
-                    else if (entry.type === 'attr') entry.el.setAttribute(entry.attr, translated);
-                    else if (entry.type === 'title') document.title = translated;
-                }
-            } catch (err) {
-                console.error('Translation failed:', err);
-                alert('翻译服务不可用，请检查网络或更换 LibreTranslate 实例。');
-                // revert selection
-                sel.value = 'zh';
-                translatable.elements.forEach(item => { item.el.innerText = item.orig; });
-                translatable.attrs.forEach(item => { item.el.setAttribute(item.attr, item.orig); });
-                document.title = document.documentElement.dataset.origTitle || document.title;
-            }
-
-            sel.classList.remove('translating');
-        }
-
-        document.getElementById('lang').addEventListener('change', async (e) => {
-            const lang = e.target.value;
-            if (lang === 'zh') {
-                translateAll('zh');
-            } else if (lang === 'vi') {
-                translateAll('vi');
-            }
-            try { localStorage.setItem('site_lang', lang); } catch(e){}
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initTranslatables();
-            try { const saved = localStorage.getItem('site_lang'); if (saved) document.getElementById('lang').value = saved; } catch(e){}
-            // auto-trigger saved language
-            try { const saved = localStorage.getItem('site_lang'); if (saved && saved !== 'zh') setTimeout(() => { document.getElementById('lang').dispatchEvent(new Event('change')); }, 300); } catch(e){}
-        });
-
-        // modal logic
+        // 模态框代码（不变）
         const modal = document.getElementById('paymentModal');
         function showModal() { modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); }
         function hideModal() { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
     </script>
+
+    <!-- 使用 https 绝对地址加载 Google 翻译脚本（避免协议相关问题） -->
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
