@@ -15,10 +15,13 @@
             color: #383838; 
         }
         .header {
-            /* 柔和的香草绿色/薄荷绿，代表新鲜香草 */
-            background-color: #81c784; 
-            color: #383838; /* 搭配深色文字 */
-            padding: 25px 0 15px 0; 
+            /* 使用你提供的图片作为背景，并加上黑色半透明叠层以保证文字可读 */
+            background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://qcloud.dpfile.com/pc/WWpwATmv_taOhV7o9XJGtN6CuOXwv6wV-8tqDbQzffmpI5D4vJpVWQRcU3vytK-o.jpg');
+            background-size: cover;          /* 图片覆盖区域 */
+            background-position: center;     /* 居中裁剪 */
+            background-repeat: no-repeat;    /* 不重复 */
+            color: #ffffff; /* 文字改为白色以在背景上可读 */
+            padding: 60px 0 30px 0; 
             text-align: center;
             /* 避免过于沉重的阴影 */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); 
@@ -31,8 +34,8 @@
         }
         .header p {
             font-size: 14px;
-            margin-top: 5px;
-            opacity: 0.9;
+            margin-top: 6px;
+            opacity: 0.95;
             font-style: italic;
         }
 
@@ -177,7 +180,7 @@
             </div>
         </div>
         
-        </div>
+    </div>
 
 
     <div id="paymentModal" class="modal">
