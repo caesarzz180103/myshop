@@ -28,17 +28,16 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             position: relative;
         }
-        /* language selector */
-        .lang-select {
+        /* 翻译控件位置（放在右上角）*/
+        #google_translate_element {
             position: absolute;
             right: 18px;
             top: 18px;
+            z-index: 120;
             background: rgba(255,255,255,0.95);
             border-radius: 6px;
             padding: 6px;
-            font-size: 14px;
-            border: 1px solid #e0e0e0;
-            z-index: 120;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         }
 
         .header h1 { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: 1px; }
@@ -59,24 +58,16 @@
         .modal-content img { width: 100%; height: auto; border: 4px solid #81c784; border-radius: 6px; margin-bottom: 15px; }
         .close-button { color: #aaa; float: right; font-size: 32px; font-weight: bold; cursor: pointer; }
         .close-button:hover { color: #ff9800; }
-
-        /* small helper for busy state */
-        .translating {
-            opacity: 0.6;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <select id="lang" class="lang-select" aria-label="选择语言 / Chọn ngôn ngữ">
-            <option value="zh">中文</option>
-            <option value="vi">Tiếng Việt</option>
-        </select>
+        <!-- Google 翻译小部件（用户可以选越南语或其他语言） -->
+        <div id="google_translate_element" aria-hidden="false"></div>
 
-        <h1>玉林美食小店</h1>
-        <p>手工制作越南传统美食</p>
+        <h1>Quán ăn ngon Ngọc Lâm（玉林美食小店）</h1>
+        <p>Ẩm thực truyền thống Việt Nam làm thủ công（手工制作越南传统美食）</p>
     </div>
 
     <div class="product-list">
@@ -118,200 +109,23 @@
     </div>
 
     <script>
-        // LibreTranslate endpoint (public instance). You can change this to your own instance for more control.
-        const TRANSLATE_API = 'https://libretranslate.de/translate';
-        const SUPPORTED_TARGETS = { vi: 'vi', zh: 'zh' };
-        const DELAY_BETWEEN_REQUESTS_MS = 200; // small delay to avoid rate-limits
-
-        // Collect translatable elements and original texts
-        const translatable = {
-            elements: [], // {el, orig}
-            attrs: []     // {el, attr, orig}
-        };
-
-        function isVisible(el) {
-            return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+        // Google 翻译小部件初始化（来源语言设为中文）
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'zh-CN',
+                includedLanguages: 'vi,zh-CN,en', // 可选：放开需要支持的语言列表
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
         }
 
-        function initTranslatables() {
-            // text elements
-            const selectors = 'h1,h2,h3,h4,h5,p,button,a,li,span,label,div';
-            document.querySelectorAll(selectors).forEach(el => {
-                // skip if inside script/style or invisible or placeholder UI
-                if (!isVisible(el)) return;
-                if (el.closest('script,style')) return;
-                const text = el.innerText && el.innerText.trim();
-                if (text) {
-                    if (!el.dataset.origText) el.dataset.origText = text;
-                    translatable.elements.push({el: el, orig: el.dataset.origText});
-                }
-            });
-
-            // attributes: alt, title, placeholder, value
-            document.querySelectorAll('img,button,input,textarea,select').forEach(el => {
-                ['alt','title','placeholder','value'].forEach(attr => {
-                    if (el.hasAttribute && el.hasAttribute(attr)) {
-                        const val = el.getAttribute(attr);
-                        if (val && val.trim()) {
-                            const key = 'orig_' + attr;
-                            if (!el.dataset[key]) el.dataset[key] = val;
-                            translatable.attrs.push({el: el, attr: attr, orig: el.dataset[key]});
-                        }
-                    }
-                });
-            });
-
-            // document title
-            if (!document.documentElement.dataset.origTitle) document.documentElement.dataset.origTitle = document.title;
-        }
-
-        async function translateText(text, target) {
-            // Check cache
-            const cacheKey = 'lt_cache_' + target + '_' + text;
-            try {
-                const cached = localStorage.getItem(cacheKey);
-                if (cached) return cached;
-            } catch(e){}
-
-            try {
-                const res = await fetch(TRANSLATE_API, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ q: text, source: 'zh', target: target, format: 'text' })
-                });
-                if (!res.ok) throw new Error('Translate API error: ' + res.status);
-                const data = await res.json();
-                const translated = data.translatedText || data;
-                try { localStorage.setItem(cacheKey, translated); } catch(e){}
-                return translated;
-            } catch (err) {
-                console.error('Translation failed for:', text, err);
-                throw err;
-            }
-        }
-
-        async function translateAll(target) {
-            if (!SUPPORTED_TARGETS[target]) return;
-            const sel = document.getElementById('lang');
-            sel.classList.add('translating');
-
-            // Translate title first
-            if (target === 'zh') {
-                // restore original
-                document.querySelectorAll('[data-orig-text]').forEach(el => {
-                    // no-op; we use dataset.origText; restore later
-                });
-
-                translatable.elements.forEach(item => {
-                    item.el.innerText = item.orig;
-                });
-                translatable.attrs.forEach(item => {
-                    item.el.setAttribute(item.attr, item.orig);
-                });
-                document.title = document.documentElement.dataset.origTitle || document.title;
-
-                sel.classList.remove('translating');
-                return;
-            }
-
-            // For target languages other than zh, perform translation
-            // Build list of texts to translate (unique)
-            const texts = [];
-            const map = [];
-
-            translatable.elements.forEach(item => {
-                texts.push(item.orig);
-                map.push({type: 'text', el: item.el});
-            });
-            translatable.attrs.forEach(item => {
-                texts.push(item.orig);
-                map.push({type: 'attr', el: item.el, attr: item.attr});
-            });
-            // title
-            texts.push(document.documentElement.dataset.origTitle || document.title);
-            map.push({type: 'title'});
-
-            // translate sequentially to reduce rate issues
-            const results = [];
-            for (let i = 0; i < texts.length; i++) {
-                const t = texts[i];
-                try {
-                    const translated = await translateText(t, target);
-                    results.push(translated);
-                } catch (err) {
-                    // if one fails, stop and restore partial
-                    console.error('Translation error, aborting further translation.');
-                    break;
-                }
-                await new Promise(r => setTimeout(r, DELAY_BETWEEN_REQUESTS_MS));
-            }
-
-            // apply translations to elements in same order
-            for (let i = 0; i < results.length; i++) {
-                const entry = map[i];
-                const translated = results[i];
-                if (!entry) continue;
-                if (entry.type === 'text') {
-                    entry.el.innerText = translated;
-                } else if (entry.type === 'attr') {
-                    entry.el.setAttribute(entry.attr, translated);
-                } else if (entry.type === 'title') {
-                    document.title = translated;
-                }
-            }
-
-            sel.classList.remove('translating');
-        }
-
-        document.getElementById('lang').addEventListener('change', async (e) => {
-            const lang = e.target.value;
-            if (lang === 'zh') {
-                // restore
-                translatable.elements.forEach(item => item.el.innerText = item.orig);
-                translatable.attrs.forEach(item => item.el.setAttribute(item.attr, item.orig));
-                document.title = document.documentElement.dataset.origTitle || document.title;
-                return;
-            }
-            // only support vi for now
-            if (lang === 'vi') {
-                try {
-                    await translateAll('vi');
-                } catch (err) {
-                    alert('翻译服务不可用，请检查网络或更换 LibreTranslate 实例。');
-                    e.target.value = 'zh';
-                }
-            }
-        });
-
-        // initialize on DOM ready
-        document.addEventListener('DOMContentLoaded', () => {
-            initTranslatables();
-            // try to restore last choice
-            try {
-                const saved = localStorage.getItem('site_lang');
-                if (saved) document.getElementById('lang').value = saved;
-            } catch(e){}
-
-            const sel = document.getElementById('lang');
-            sel.addEventListener('change', (e) => {
-                try { localStorage.setItem('site_lang', e.target.value); } catch(e){}
-            });
-
-            // auto-trigger if saved vi
-            try {
-                const saved = localStorage.getItem('site_lang');
-                if (saved === 'vi') {
-                    // delay slightly until everything painted
-                    setTimeout(() => { sel.dispatchEvent(new Event('change')); }, 300);
-                }
-            } catch(e){}
-        });
-
-        // modal logic
+        // 模态框代码（不变）
         const modal = document.getElementById('paymentModal');
         function showModal() { modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); }
         function hideModal() { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
     </script>
+
+    <!-- Google Translate 脚本（会回调 googleTranslateElementInit） -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
