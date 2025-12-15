@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>玉林小店（越南美食）</title>
+    <title data-i18n="title">玉林小店（越南美食）</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif; 
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f7f9f7;
-            color: #383838; 
+            color: #383838;
         }
         .header {
             background-image: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('https://qcloud.dpfile.com/pc/WWpwATmv_taOhV7o9XJGtN6CuOXwv6wV-8tqDbQzffmpI5D4vJpVWQRcU3vytK-o.jpg');
@@ -28,8 +28,9 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             position: relative;
         }
-        /* 翻译控件位置（放在右上角）*/
-        #google_translate_element {
+
+        /* 语言选择器 */
+        #langSelectorWrap {
             position: absolute;
             right: 18px;
             top: 18px;
@@ -38,33 +39,17 @@
             border-radius: 6px;
             padding: 6px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        #languageSelect {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            cursor: pointer;
         }
 
-        /* ========== 修复 Google Translate 在移动端下拉不可点的问题 ==========
-           - 强制把 google 下拉与 menu-frame 提升到最上层
-           - 给 select 元素更高的 z-index 并确保 pointer-events/pointer 可用
-           - 如果页面某处使用 transform，会导致子元素（如下拉）不可点击；尽量避免:
-        */
-        /* 翻译插件本身的 select（下拉） */
-        .goog-te-combo {
-            z-index: 99999 !important;
-            position: relative !important;
-            pointer-events: auto !important;
-            -webkit-appearance: menulist-button !important;
-        }
-        /* Google 插件插入的 iframe（菜单） */
-        .goog-te-menu-frame {
-            z-index: 99998 !important;
-            position: absolute !important;
-            /* 调整位置以避免被 header/其它元素遮挡（按需调整 top/right） */
-            top: 56px !important;
-            right: 18px !important;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.2) !important;
-        }
-        /* 如果你页面里某些元素使用 transform，会导致子元素（如下拉）不可点击；尽量避免：
-           例如：.some-parent { transform: translateZ(0); } -> 移除或改用其它方式
-        */
-        /* 其它现有样式（略） */
         .header h1 { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: 1px; }
         .header p { font-size: 16px; margin-top: 8px; opacity: 0.95; font-style: italic; }
 
@@ -88,38 +73,44 @@
 <body>
 
     <div class="header">
-        <!-- Google 翻译小部件（用户可以选越南语或其他语言） -->
-        <div id="google_translate_element" aria-hidden="false"></div>
+        <!-- 本地语言切换（从配置文件中读取翻译） -->
+        <div id="langSelectorWrap" aria-hidden="false">
+            <label for="languageSelect" style="font-size:13px;color:#444;margin-right:6px;">语言</label>
+            <select id="languageSelect" aria-label="语言选择">
+                <option value="zh">中文</option>
+                <option value="vi">Tiếng Việt</option>
+            </select>
+        </div>
 
-        <h1>玉林美食小店</h1>
-        <p>手工制作越南传统美食</p>
+        <h1 data-i18n="header_title">玉林美食小店</h1>
+        <p data-i18n="header_sub">手工制作越南传统美食</p>
     </div>
 
     <div class="product-list">
         <div class="product-card">
-            <img src="https://via.placeholder.com/300x150/0000FF/FFFFFF?text=Product+1" alt="越南酸菜图片">
+            <img data-i18n-alt="p1_img_alt" src="https://via.placeholder.com/300x150/0000FF/FFFFFF?text=Product+1" alt="越南酸菜图片">
             <div class="product-info">
-                <h3>腌制类美食：越南酸菜</h3> 
-                <div class="price">¥ 39.00 / 份</div>
-                <button class="buy-button" onclick="showModal()">立即购买 (加微信)</button>
+                <h3 data-i18n="p1_name">腌制类美食：越南酸菜</h3>
+                <div class="price" data-i18n="p1_price">¥ 39.00 / 份</div>
+                <button class="buy-button" data-i18n="buy_button" onclick="showModal()">立即购买 (加微信)</button>
             </div>
         </div>
 
         <div class="product-card">
-            <img src="https://via.placeholder.com/300x150/FF0000/FFFFFF?text=Product+2" alt="大小肠图片">
+            <img data-i18n-alt="p2_img_alt" src="https://via.placeholder.com/300x150/FF0000/FFFFFF?text=Product+2" alt="大小肠图片">
             <div class="product-info">
-                <h3>商品 B：大小肠</h3>
-                <div class="price">¥ 88.00 / 罐</div>
-                <button class="buy-button" onclick="showModal()">立即购买 (加微信)</button>
+                <h3 data-i18n="p2_name">商品 B：大小肠</h3>
+                <div class="price" data-i18n="p2_price">¥ 88.00 / 罐</div>
+                <button class="buy-button" data-i18n="buy_button" onclick="showModal()">立即购买 (加微信)</button>
             </div>
         </div>
 
         <div class="product-card">
-            <img src="https://via.placeholder.com/300x150/00FF00/FFFFFF?text=Product+3" alt="水果茶图片">
+            <img data-i18n-alt="p3_img_alt" src="https://via.placeholder.com/300x150/00FF00/FFFFFF?text=Product+3" alt="水果茶图片">
             <div class="product-info">
-                <h3>商品 C：夏日清爽水果茶</h3>
-                <div class="price">¥ 25.00 / 杯</div>
-                <button class="buy-button" onclick="showModal()">立即购买 (加微信)</button>
+                <h3 data-i18n="p3_name">商品 C：夏日清爽水果茶</h3>
+                <div class="price" data-i18n="p3_price">¥ 25.00 / 杯</div>
+                <button class="buy-button" data-i18n="buy_button" onclick="showModal()">立即购买 (加微信)</button>
             </div>
         </div>
     </div>
@@ -127,38 +118,101 @@
     <div id="paymentModal" class="modal" aria-hidden="true">
         <div class="modal-content">
             <span class="close-button" onclick="hideModal()">&times;</span>
-            <h2>请扫码或长按识别二维码支付</h2>
-            <img id="qrCodeImage" src="https://via.placeholder.com/300x300/CCCCCC/333333?text=YOUR_PAYMENT_QR_CODE" alt="收款二维码">
-            <p>支付后，请截图联系店主确认订单。</p>
+            <h2 data-i18n="modal_title">请扫码或长按识别二维码支付</h2>
+            <img id="qrCodeImage" src="https://via.placeholder.com/300x300/CCCCCC/333333?text=YOUR_PAYMENT_QR_CODE" alt="收款二维码" data-i18n-alt="modal_qr_alt">
+            <p data-i18n="modal_note">支付后，请截图联系店主确认订单。</p>
         </div>
     </div>
 
     <script>
-        // Google 翻译小部件初始化（来源语言设为中文）
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'zh-CN',
-                includedLanguages: 'vi,zh-CN,en', // 可选：放开需要支持的语言列表
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-            }, 'google_translate_element');
+        // 简单的本地 i18n 实现
+        const DEFAULT_LANG = 'zh';
+        const SUPPORTED = ['zh','vi'];
 
-            // 修复：防止翻译容器的触摸事件被上层捕获（某些页面上会被 window.onclick 或者其它拦截）
-            var gEl = document.getElementById('google_translate_element');
-            if (gEl && gEl.addEventListener) {
-                gEl.addEventListener('touchstart', function(e){
-                    e.stopPropagation();
-                }, {passive:false});
+        // 缓存加载过的 translation 对象
+        const translationsCache = {};
+
+        // 根据 data-i18n 和 data-i18n-alt 应用翻译
+        function applyTranslations(t) {
+            // innerText / innerHTML
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t && t[key]) {
+                    el.innerText = t[key];
+                } else {
+                    // 如果没有翻译，保持原有中文（页面默认中文）
+                }
+            });
+            // alt 属性（图片)
+            document.querySelectorAll('[data-i18n-alt]').forEach(img => {
+                const key = img.getAttribute('data-i18n-alt');
+                if (t && t[key]) {
+                    img.setAttribute('alt', t[key]);
+                }
+            });
+            // title 元素
+            const titleKey = document.documentElement.querySelector('title')?.getAttribute('data-i18n');
+            if (titleKey && t && t[titleKey]) {
+                document.title = t[titleKey];
+            } else {
+                // 保持 HTML 中原始 title
             }
         }
 
-        // 模态框代码（不变）
+        async function loadTranslations(lang) {
+            if (!SUPPORTED.includes(lang)) return null;
+            if (translationsCache[lang]) return translationsCache[lang];
+            try {
+                const res = await fetch(`/translations/${lang}.json`, {cache: 'no-cache'});
+                if (!res.ok) throw new Error('无法加载翻译文件: ' + res.status);
+                const json = await res.json();
+                translationsCache[lang] = json;
+                return json;
+            } catch (err) {
+                console.warn('加载翻译失败：', err);
+                return null;
+            }
+        }
+
+        async function setLanguage(lang, persist=true) {
+            if (!SUPPORTED.includes(lang)) lang = DEFAULT_LANG;
+            // 如果是中文，恢复 HTML 中原始文本（不做覆盖）：
+            if (lang === DEFAULT_LANG) {
+                if (persist) localStorage.setItem('site_lang', lang);
+                window.location.reload();
+                return;
+            }
+            const t = await loadTranslations(lang);
+            if (t) {
+                applyTranslations(t);
+                if (persist) localStorage.setItem('site_lang', lang);
+            } else {
+                console.warn('没有找到语言包，保持默认中文');
+            }
+        }
+
+        // 初始化：读取用户上次选择
+        document.addEventListener('DOMContentLoaded', function(){
+            const select = document.getElementById('languageSelect');
+            const saved = localStorage.getItem('site_lang') || DEFAULT_LANG;
+            if (SUPPORTED.includes(saved)) {
+                select.value = saved;
+                if (saved !== DEFAULT_LANG) {
+                    setLanguage(saved, false);
+                }
+            }
+            select.addEventListener('change', function(){
+                const v = select.value;
+                setLanguage(v, true);
+            });
+        });
+
+        // 模态框
         const modal = document.getElementById('paymentModal');
         function showModal() { modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false'); }
         function hideModal() { modal.style.display = 'none'; modal.setAttribute('aria-hidden', 'true'); }
         window.onclick = function(event) { if (event.target == modal) hideModal(); }
     </script>
 
-    <!-- 使用 https 绝对地址加载 Google 翻译脚本（避免协议相关问题） -->
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
