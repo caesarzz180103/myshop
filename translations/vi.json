@@ -1,18 +1,52 @@
 {
-  "title": "Tiệm Yulin — Ẩm thực Việt Nam",
-  "header_title": "Tiệm Ẩm Thực Yulin",
-  "header_sub": "Đồ ăn truyền thống Việt Nam thủ công",
-  "p1_name": "Dưa chua Việt Nam",
-  "p1_price": "¥ 39.00 / phần",
-  "p1_img_alt": "Ảnh dưa chua Việt Nam",
-  "p2_name": "Lòng heo (loại lớn/nhỏ)",
-  "p2_price": "¥ 88.00 / lon",
-  "p2_img_alt": "Ảnh lòng heo",
-  "p3_name": "Trà trái cây mát lạnh mùa hè",
-  "p3_price": "¥ 25.00 / ly",
-  "p3_img_alt": "Ảnh trà trái cây",
-  "buy_button": "Mua ngay (thêm WeChat)",
-  "modal_title": "Vui lòng quét mã hoặc nhấn giữ để nhận diện mã QR để thanh toán",
-  "modal_qr_alt": "Mã QR thanh toán",
-  "modal_note": "Sau khi thanh toán, vui lòng chụp màn hình và liên hệ chủ cửa hàng để xác nhận đơn hàng."
+  "meta": {
+    "lang": "vi",
+    "name": "Tiếng Việt"
+  },
+
+  "site": {
+    "title": "Tiệm Yulin — Ẩm thực Việt Nam",
+    "header_title": "Tiệm Ẩm Thực Yulin",
+    "header_sub": "Đồ ăn truyền thống Việt Nam thủ công"
+  },
+
+  "products": {
+    "p1": {
+      "name": "Dưa chua Việt Nam",
+      "price": "¥ {price} / phần",
+      "img_alt": "Ảnh dưa chua Việt Nam"
+    },
+    "p2": {
+      "name": "Lòng heo (loại lớn/nhỏ)",
+      "price": "¥ {price} / lon",
+      "img_alt": "Ảnh lòng heo"
+    },
+    "p3": {
+      "name": "Trà trái cây mát lạnh mùa hè",
+      "price": "¥ {price} / ly",
+      "img_alt": "Ảnh trà trái cây"
+    }
+  },
+
+  "buttons": {
+    "buy": "Mua ngay (thêm WeChat)",
+    "add_to_cart": "Thêm vào giỏ"
+  },
+
+  "modal": {
+    "title": "Vui lòng quét mã hoặc nhấn giữ để nhận diện mã QR để thanh toán",
+    "qr_alt": "Mã QR thanh toán",
+    "note": "Sau khi thanh toán, vui lòng chụp màn hình và liên hệ chủ cửa hàng để xác nhận đơn hàng."
+  },
+
+  "messages": {
+    "load_failed": "Không thể tải gói ngôn ngữ.",
+    "no_translation": "Không tìm thấy bản dịch, hiển thị tiếng Trung mặc định."
+  },
+
+  "cart": {
+    "items": "{count} món",
+    "items_zero": "Không có mặt hàng",
+    "items_one": "1 món"
+  }
 }
